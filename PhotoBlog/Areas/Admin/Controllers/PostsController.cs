@@ -79,7 +79,7 @@ namespace PhotoBlog.Areas.Admin.Controllers
         private string UploadFile(IFormFile photo)
         {
             var fileName = Guid.NewGuid() + Path.GetExtension(photo.FileName);
-            string savePath = Path.Combine(_env.WebRootPath, fileName);
+            string savePath = Path.Combine(_env.WebRootPath, "img", fileName);
 
             using (var stream = System.IO.File.Create(savePath))
             {
@@ -170,11 +170,23 @@ namespace PhotoBlog.Areas.Admin.Controllers
             var post = await _context.Posts.FindAsync(id);
             if (post != null)
             {
+                DeletePhoto(post.Photo);
                 _context.Posts.Remove(post);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        private void DeletePhoto(string photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+                return;
+
+            string savePath = Path.Combine(_env.WebRootPath, "img", photo);
+
+            if (System.IO.File.Exists(savePath))
+                System.IO.File.Delete(savePath);
         }
 
         private bool PostExists(int id)
