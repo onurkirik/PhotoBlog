@@ -25,7 +25,7 @@ namespace PhotoBlog.Areas.Admin.Controllers
         // GET: Admin/Posts
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Posts.ToListAsync());
+            return View(await _context.Posts.ToListAsync());
         }
 
         // GET: Admin/Posts/Details/5
@@ -59,9 +59,22 @@ namespace PhotoBlog.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PostViewModel vm)
         {
+            //RESİM GEÇERLİLİK KONTROLLERİ
+            if (vm.Photo != null)
+            {
+                if (vm.Photo.ContentType.StartsWith("image/"))
+                {
+                    ModelState.AddModelError("Photo", "Invalid photo format.");
+                }
+                else if (vm.Photo.Length > 1 * 1024 * 1024)
+                {
+                    ModelState.AddModelError("Photo", "Max file size must be 1MB.");
+                }
+            }
+
             if (ModelState.IsValid)
             {
-                var post = new Post() 
+                var post = new Post()
                 {
                     Title = vm.Title,
                     Description = vm.Description,
@@ -171,14 +184,14 @@ namespace PhotoBlog.Areas.Admin.Controllers
             {
                 _context.Posts.Remove(post);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool PostExists(int id)
         {
-          return _context.Posts.Any(e => e.Id == id);
+            return _context.Posts.Any(e => e.Id == id);
         }
     }
 }
