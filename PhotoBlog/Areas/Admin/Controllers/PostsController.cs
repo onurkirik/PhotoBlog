@@ -57,7 +57,7 @@ namespace PhotoBlog.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(PostViewModel vm)
+        public async Task<IActionResult> Create(CreateViewModel vm)
         {
 
             if (ModelState.IsValid)
@@ -102,7 +102,15 @@ namespace PhotoBlog.Areas.Admin.Controllers
             {
                 return NotFound();
             }
-            return View(post);
+
+            var vm = new EditViewModel()
+            {
+                Id = post.Id,
+                Title = post.Title,
+                Description = post.Description
+            };
+
+            return View(vm);
         }
 
         // POST: Admin/Posts/Edit/5
@@ -110,34 +118,29 @@ namespace PhotoBlog.Areas.Admin.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Photo,CreatedTime")] Post post)
+        public async Task<IActionResult> Edit(int id, EditViewModel vm)
         {
-            if (id != post.Id)
-            {
-                return NotFound();
-            }
-
+            
             if (ModelState.IsValid)
             {
-                try
+                var post = await _context.Posts.FindAsync(vm.Id);
+
+                if (post == null) return NotFound();
+
+                post.Title = vm.Title;
+                post.Description = vm.Description;
+
+                if (vm.Photo != null)
                 {
-                    _context.Update(post);
-                    await _context.SaveChangesAsync();
+                    DeletePhoto(post.Photo);
+                    post.Photo = UploadFile(vm.Photo); 
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PostExists(post.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            return View(post);
+            return View(vm);
         }
 
         // GET: Admin/Posts/Delete/5
